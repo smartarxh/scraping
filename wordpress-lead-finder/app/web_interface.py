@@ -383,6 +383,9 @@ def start_search():
         'output_dir': ''
     }
     
+    # Create finder instance
+    finder = LeadFinder(max_websites=max_websites)
+    
     def progress_callback(message, progress):
         current_job['message'] = message
         current_job['progress'] = progress
@@ -392,7 +395,6 @@ def start_search():
     def run_search():
         global current_job
         try:
-            finder = LeadFinder(max_websites=max_websites)
             leads, output_dir = finder.find_leads(keyword, progress_callback)
             current_job['leads'] = leads
             current_job['output_dir'] = output_dir
@@ -402,6 +404,7 @@ def start_search():
         except Exception as e:
             current_job['status'] = 'error'
             current_job['message'] = f'Error: {str(e)}'
+            finder.close()
     
     import threading
     thread = threading.Thread(target=run_search)
