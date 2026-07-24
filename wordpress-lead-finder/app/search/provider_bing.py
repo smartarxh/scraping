@@ -1,25 +1,19 @@
 """
 Bing search provider implementation
-Uses Bing HTML interface for search results
+Uses ddgs library for reliable Bing search results
 """
 
-import requests
-from bs4 import BeautifulSoup
 from typing import List
 from app.search.search_provider import SearchProvider
 
 
 class BingProvider(SearchProvider):
     """
-    Bing search provider.
+    Bing search provider using ddgs library.
     """
     
     def __init__(self, max_results: int = 50):
         super().__init__(max_results)
-        self.base_url = "https://www.bing.com/search"
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
     
     def search(self, query: str) -> List[str]:
         """
@@ -28,39 +22,19 @@ class BingProvider(SearchProvider):
         urls = []
         
         try:
-            params = {
-                'q': query,
-                'count': self.max_results
-            }
+            from ddgs import DDGS
             
-            response = requests.get(
-                self.base_url,
-                params=params,
-                headers=self.headers,
-                timeout=15
-            )
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'lxml')
+            with DDGS() as ddgs:
+                # Use Bing backend specifically
+                results = list(ddgs.text(query, max_results=self.max_results, backend='bing'))
                 
-                # Find result links - Bing uses various structures
-                results = soup.find_all('li', class_='b_algo')
-                
-                for result in results[:self.max_results]:
-                    link = result.find('a', href=True)
-                    if link:
-                        url = link.get('href')
-                        if url and url.startswith('http'):
-                            urls.append(url)
-                
-                # Alternative selector
-                if len(urls) < self.max_results:
-                    results = soup.select('h2 a')
-                    for result in results[:self.max_results - len(urls)]:
-                        url = result.get('href')
-                        if url and url.startswith('http') and not url.startswith('javascript:'):
-                            urls.append(url)
+                for result in results:
+                    href = result.get('href')
+                    if href and href.startswith('http'):
+                        urls.append(href)
         
+        except ImportError:
+            print("ddgs library not installed. Run: pip install ddgs")
         except Exception as e:
             print(f"Bing search error: {e}")
         

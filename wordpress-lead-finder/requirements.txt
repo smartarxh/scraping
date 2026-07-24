@@ -8,3 +8,4 @@ tldextract>=5.1.0
 phonenumbers>=8.13.0
 urllib3>=2.0.0
 flask>=3.0.0
+ddgs>=9.14.0
